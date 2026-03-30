@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { type ColumnDef } from "@tanstack/react-table";
-import { Users } from "lucide-react";
 import PageHeader from "@/components/shared/PageHeader";
 import DataTable from "@/components/shared/DataTable";
 import StatusBadge from "@/components/shared/StatusBadge";

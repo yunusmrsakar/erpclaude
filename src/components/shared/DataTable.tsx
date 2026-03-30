@@ -17,14 +17,12 @@ interface DataTableProps<T> {
   data: T[];
   columns: ColumnDef<T, unknown>[];
   searchPlaceholder?: string;
-  searchColumn?: string;
 }
 
 export default function DataTable<T>({
   data,
   columns,
   searchPlaceholder = "Ara...",
-  searchColumn,
 }: DataTableProps<T>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState("");
