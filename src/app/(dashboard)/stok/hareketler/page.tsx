@@ -320,8 +320,7 @@ export default function HareketlerPage() {
           <DataTable
             data={movements}
             columns={columns}
-            searchPlaceholder="Hareket ara..."
-            searchColumn="productName"
+            searchPlaceholder="Ürün veya depo ara..."
           />
         )
       )}

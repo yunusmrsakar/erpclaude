@@ -121,7 +121,6 @@ export default function UrunlerPage() {
           data={products}
           columns={columns}
           searchPlaceholder="Ürün ara..."
-          searchColumn="name"
         />
       )}
     </div>

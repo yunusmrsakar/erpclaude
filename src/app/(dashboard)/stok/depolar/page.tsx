@@ -183,7 +183,6 @@ export default function DepolarPage() {
             data={warehouses}
             columns={columns}
             searchPlaceholder="Depo ara..."
-            searchColumn="name"
           />
         )
       )}
