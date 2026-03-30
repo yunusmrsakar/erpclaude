@@ -1,0 +1,436 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ==================== FİNANS ====================
+
+model Account {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  name      String
+  type      String // VARLIK, KAYNAK, GELIR, GIDER, OZKAYNAK
+  parentId  String?
+  parent    Account?  @relation("AccountTree", fields: [parentId], references: [id])
+  children  Account[] @relation("AccountTree")
+  isActive  Boolean   @default(true)
+  balance   Float     @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  journalLines JournalLine[]
+}
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  entryNo     String   @unique
+  date        DateTime
+  description String
+  status      String   @default("TASLAK")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines JournalLine[]
+}
+
+model JournalLine {
+  id             String       @id @default(cuid())
+  journalEntryId String
+  journalEntry   JournalEntry @relation(fields: [journalEntryId], references: [id], onDelete: Cascade)
+  accountId      String
+  account        Account      @relation(fields: [accountId], references: [id])
+  debit          Float        @default(0)
+  credit         Float        @default(0)
+  description    String?
+}
+
+model Invoice {
+  id         String    @id @default(cuid())
+  invoiceNo  String    @unique
+  type       String // SATIS, ALIS
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  date       DateTime
+  dueDate    DateTime
+  subtotal   Float     @default(0)
+  taxAmount  Float     @default(0)
+  total      Float     @default(0)
+  status     String    @default("TASLAK")
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  lines InvoiceLine[]
+}
+
+model InvoiceLine {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+  description String
+  quantity    Float
+  unitPrice   Float
+  taxRate     Float    @default(20)
+  total       Float
+}
+
+// ==================== İNSAN KAYNAKLARI ====================
+
+model Department {
+  id        String       @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    Department?  @relation("DeptTree", fields: [parentId], references: [id])
+  children  Department[] @relation("DeptTree")
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  employees Employee[]
+}
+
+model Employee {
+  id           String      @id @default(cuid())
+  employeeNo   String      @unique
+  firstName    String
+  lastName     String
+  email        String?
+  phone        String?
+  tcKimlikNo   String?
+  birthDate    DateTime?
+  hireDate     DateTime
+  departmentId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  position     String?
+  salary       Float       @default(0)
+  status       String      @default("AKTIF")
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  leaves   Leave[]
+  payrolls Payroll[]
+}
+
+model Leave {
+  id         String   @id @default(cuid())
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  type       String
+  startDate  DateTime
+  endDate    DateTime
+  status     String   @default("BEKLEMEDE")
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Payroll {
+  id          String   @id @default(cuid())
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  period      String
+  grossSalary Float
+  sgkEmployee Float
+  sgkEmployer Float
+  incomeTax   Float
+  stampTax    Float
+  netSalary   Float
+  status      String   @default("TASLAK")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ==================== STOK ====================
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  parentId  String?
+  parent    Category?  @relation("CatTree", fields: [parentId], references: [id])
+  children  Category[] @relation("CatTree")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  products Product[]
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  sku           String    @unique
+  name          String
+  description   String?
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  unit          String    @default("ADET")
+  purchasePrice Float     @default(0)
+  salePrice     Float     @default(0)
+  taxRate       Float     @default(20)
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  stockLevels        StockLevel[]
+  stockMovements     StockMovement[]
+  invoiceLines       InvoiceLine[]
+  salesOrderLines    SalesOrderLine[]
+  purchaseOrderLines PurchaseOrderLine[]
+  quotationLines     QuotationLine[]
+}
+
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stockLevels    StockLevel[]
+  stockMovements StockMovement[]
+}
+
+model StockLevel {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  quantity    Float     @default(0)
+
+  @@unique([productId, warehouseId])
+}
+
+model StockMovement {
+  id            String    @id @default(cuid())
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id])
+  warehouseId   String
+  warehouse     Warehouse @relation(fields: [warehouseId], references: [id])
+  type          String
+  quantity      Float
+  referenceType String?
+  referenceId   String?
+  date          DateTime
+  notes         String?
+  createdAt     DateTime  @default(now())
+}
+
+// ==================== SATIŞ ====================
+
+model Customer {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  taxNumber     String?
+  taxOffice     String?
+  address       String?
+  city          String?
+  phone         String?
+  email         String?
+  contactPerson String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  invoices    Invoice[]
+  salesOrders SalesOrder[]
+  quotations  Quotation[]
+  contacts    Contact[]
+}
+
+model SalesOrder {
+  id           String    @id @default(cuid())
+  orderNo      String    @unique
+  customerId   String
+  customer     Customer  @relation(fields: [customerId], references: [id])
+  date         DateTime
+  deliveryDate DateTime?
+  status       String    @default("TASLAK")
+  subtotal     Float     @default(0)
+  taxAmount    Float     @default(0)
+  total        Float     @default(0)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  lines         SalesOrderLine[]
+  deliveryNotes DeliveryNote[]
+}
+
+model SalesOrderLine {
+  id        String     @id @default(cuid())
+  orderId   String
+  order     SalesOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product    @relation(fields: [productId], references: [id])
+  quantity  Float
+  unitPrice Float
+  taxRate   Float      @default(20)
+  total     Float
+}
+
+model Quotation {
+  id          String   @id @default(cuid())
+  quotationNo String   @unique
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id])
+  date        DateTime
+  validUntil  DateTime
+  status      String   @default("TASLAK")
+  subtotal    Float    @default(0)
+  taxAmount   Float    @default(0)
+  total       Float    @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines QuotationLine[]
+}
+
+model QuotationLine {
+  id          String    @id @default(cuid())
+  quotationId String
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  quantity    Float
+  unitPrice   Float
+  taxRate     Float     @default(20)
+  total       Float
+}
+
+model DeliveryNote {
+  id           String     @id @default(cuid())
+  deliveryNo   String     @unique
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
+  date         DateTime
+  status       String     @default("HAZIRLANIYOR")
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+// ==================== SATIN ALMA ====================
+
+model Supplier {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  name          String
+  taxNumber     String?
+  taxOffice     String?
+  address       String?
+  city          String?
+  phone         String?
+  email         String?
+  contactPerson String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  invoices       Invoice[]
+  purchaseOrders PurchaseOrder[]
+  contacts       Contact[]
+}
+
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  orderNo    String   @unique
+  supplierId String
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  date       DateTime
+  status     String   @default("TASLAK")
+  subtotal   Float    @default(0)
+  taxAmount  Float    @default(0)
+  total      Float    @default(0)
+  notes      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  lines         PurchaseOrderLine[]
+  goodsReceipts GoodsReceipt[]
+}
+
+model PurchaseOrderLine {
+  id        String        @id @default(cuid())
+  orderId   String
+  order     PurchaseOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product       @relation(fields: [productId], references: [id])
+  quantity  Float
+  unitPrice Float
+  taxRate   Float         @default(20)
+  total     Float
+}
+
+model GoodsReceipt {
+  id              String        @id @default(cuid())
+  receiptNo       String        @unique
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  date            DateTime
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+// ==================== CRM ====================
+
+model Contact {
+  id         String    @id @default(cuid())
+  firstName  String
+  lastName   String
+  company    String?
+  email      String?
+  phone      String?
+  type       String    @default("DIGER")
+  notes      String?
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id])
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  opportunities Opportunity[]
+  activities    Activity[]
+}
+
+model Opportunity {
+  id                String    @id @default(cuid())
+  title             String
+  contactId         String?
+  contact           Contact?  @relation(fields: [contactId], references: [id])
+  value             Float     @default(0)
+  stage             String    @default("ADAY")
+  probability       Int       @default(10)
+  expectedCloseDate DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  activities Activity[]
+}
+
+model Activity {
+  id            String       @id @default(cuid())
+  type          String
+  subject       String
+  contactId     String?
+  contact       Contact?     @relation(fields: [contactId], references: [id])
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id])
+  date          DateTime
+  notes         String?
+  isCompleted   Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
