@@ -7,6 +7,10 @@ import {
   Truck,
   Handshake,
   BarChart3,
+  Factory,
+  ClipboardCheck,
+  Wrench,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 
@@ -84,9 +88,40 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   {
+    title: "Üretim",
+    href: "/uretim",
+    icon: Factory,
+    children: [
+      { title: "Ürün Reçeteleri", href: "/uretim/receteler" },
+      { title: "Üretim Emirleri", href: "/uretim/emirler" },
+    ],
+  },
+  {
+    title: "Kalite Yönetimi",
+    href: "/kalite",
+    icon: ClipboardCheck,
+    children: [
+      { title: "Kalite Kontrolleri", href: "/kalite/kontroller" },
+    ],
+  },
+  {
+    title: "Bakım & Onarım",
+    href: "/bakim",
+    icon: Wrench,
+    children: [
+      { title: "Ekipmanlar", href: "/bakim/ekipmanlar" },
+      { title: "Bakım Emirleri", href: "/bakim/emirler" },
+    ],
+  },
+  {
     title: "Raporlar",
     href: "/raporlar",
     icon: BarChart3,
+  },
+  {
+    title: "Ayarlar",
+    href: "/ayarlar",
+    icon: Settings,
   },
 ];
 
@@ -114,6 +149,21 @@ export const DURUM_RENKLERI: Record<string, string> = {
   MUZAKERE: "bg-yellow-100 text-yellow-800",
   KAZANILDI: "bg-green-100 text-green-800",
   KAYBEDILDI: "bg-red-100 text-red-800",
+  PLANLI: "bg-blue-100 text-blue-800",
+  DEVAM: "bg-yellow-100 text-yellow-800",
+  DURAKLATILDI: "bg-orange-100 text-orange-800",
+  GECTI: "bg-green-100 text-green-800",
+  KALDI: "bg-red-100 text-red-800",
+  KOSULLU: "bg-yellow-100 text-yellow-800",
+  BAKIM: "bg-orange-100 text-orange-800",
+  ARIZA: "bg-red-100 text-red-800",
+  DEVRE_DISI: "bg-gray-100 text-gray-800",
+  DUSUK: "bg-gray-100 text-gray-800",
+  NORMAL: "bg-blue-100 text-blue-800",
+  YUKSEK: "bg-orange-100 text-orange-800",
+  ACIL: "bg-red-100 text-red-800",
+  PERIYODIK: "bg-blue-100 text-blue-800",
+  ONLEYICI: "bg-indigo-100 text-indigo-800",
 };
 
 export const DURUM_ETIKETLERI: Record<string, string> = {
@@ -140,6 +190,21 @@ export const DURUM_ETIKETLERI: Record<string, string> = {
   MUZAKERE: "Müzakere",
   KAZANILDI: "Kazanıldı",
   KAYBEDILDI: "Kaybedildi",
+  PLANLI: "Planlı",
+  DEVAM: "Devam Ediyor",
+  DURAKLATILDI: "Duraklatıldı",
+  GECTI: "Geçti",
+  KALDI: "Kaldı",
+  KOSULLU: "Koşullu Kabul",
+  BAKIM: "Bakımda",
+  ARIZA: "Arızalı",
+  DEVRE_DISI: "Devre Dışı",
+  DUSUK: "Düşük",
+  NORMAL: "Normal",
+  YUKSEK: "Yüksek",
+  ACIL: "Acil",
+  PERIYODIK: "Periyodik",
+  ONLEYICI: "Önleyici",
   YILLIK: "Yıllık İzin",
   HASTALIK: "Hastalık İzni",
   MAZERET: "Mazeret İzni",

@@ -125,7 +125,7 @@ export async function POST(req: NextRequest) {
 
     // Create payroll records for all employees
     const payrolls = await Promise.all(
-      activeEmployees.map(async (emp) => {
+      activeEmployees.map(async (emp: any) => {
         const calc = calculateMonthlyPayroll(emp.salary, monthIndex);
 
         return prisma.payroll.create({

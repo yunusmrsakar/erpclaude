@@ -14,15 +14,15 @@ export async function GET(request: NextRequest) {
       ]);
 
       const totalIncome = invoices
-        .filter((i) => i.type === "SATIS")
-        .reduce((sum, i) => sum + i.total, 0);
+        .filter((i: any) => i.type === "SATIS")
+        .reduce((sum: number, i: any) => sum + i.total, 0);
 
       const totalExpenses = invoices
-        .filter((i) => i.type === "ALIS")
-        .reduce((sum, i) => sum + i.total, 0);
+        .filter((i: any) => i.type === "ALIS")
+        .reduce((sum: number, i: any) => sum + i.total, 0);
 
       const invoiceCountByStatus = invoices.reduce(
-        (acc, i) => {
+        (acc: Record<string, number>, i: any) => {
           acc[i.status] = (acc[i.status] || 0) + 1;
           return acc;
         },
@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
         netProfit: totalIncome - totalExpenses,
         invoiceCount: invoices.length,
         invoiceCountByStatus,
-        salesOrderTotal: salesOrders.reduce((sum, o) => sum + o.total, 0),
+        salesOrderTotal: salesOrders.reduce((sum: number, o: any) => sum + o.total, 0),
       });
     }
 
@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
       ]);
 
       const totalStockValue = stockLevels.reduce(
-        (sum, sl) => sum + sl.quantity * sl.product.purchasePrice,
+        (sum: number, sl: any) => sum + sl.quantity * sl.product.purchasePrice,
         0
       );
 
-      const lowStockCount = stockLevels.filter((sl) => sl.quantity < 10).length;
+      const lowStockCount = stockLevels.filter((sl: any) => sl.quantity < 10).length;
 
       const movementsByType = stockMovements.reduce(
-        (acc, m) => {
+        (acc: Record<string, number>, m: any) => {
           acc[m.type] = (acc[m.type] || 0) + 1;
           return acc;
         },
@@ -66,7 +66,7 @@ export async function GET(request: NextRequest) {
         lowStockCount,
         totalStockValue,
         movementsByType,
-        totalStockItems: stockLevels.reduce((sum, sl) => sum + sl.quantity, 0),
+        totalStockItems: stockLevels.reduce((sum: number, sl: any) => sum + sl.quantity, 0),
       });
     }
 
@@ -76,10 +76,10 @@ export async function GET(request: NextRequest) {
         prisma.customer.findMany({ where: { isActive: true } }),
       ]);
 
-      const totalSales = salesOrders.reduce((sum, o) => sum + o.total, 0);
+      const totalSales = salesOrders.reduce((sum: number, o: any) => sum + o.total, 0);
 
       const orderCountByStatus = salesOrders.reduce(
-        (acc, o) => {
+        (acc: Record<string, number>, o: any) => {
           acc[o.status] = (acc[o.status] || 0) + 1;
           return acc;
         },
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
       );
 
       const customerRevenue = salesOrders.reduce(
-        (acc, o) => {
+        (acc: Record<string, number>, o: any) => {
           const name = o.customer?.name || "Bilinmeyen";
           acc[name] = (acc[name] || 0) + o.total;
           return acc;
@@ -96,7 +96,7 @@ export async function GET(request: NextRequest) {
       );
 
       const topCustomers = Object.entries(customerRevenue)
-        .sort(([, a], [, b]) => b - a)
+        .sort(([, a]: [string, any], [, b]: [string, any]) => (b as number) - (a as number))
         .slice(0, 5)
         .map(([name, revenue]) => ({ name, revenue }));
 

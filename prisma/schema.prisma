@@ -182,6 +182,10 @@ model Product {
   salesOrderLines    SalesOrderLine[]
   purchaseOrderLines PurchaseOrderLine[]
   quotationLines     QuotationLine[]
+  boms               BillOfMaterial[]
+  bomMaterials       BomItem[]            @relation("BomMaterial")
+  productionMaterials ProductionOrderLine[] @relation("ProductionMaterial")
+  qualityInspections QualityInspection[]
 }
 
 model Warehouse {
@@ -432,4 +436,144 @@ model Activity {
   isCompleted   Boolean      @default(false)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
+}
+
+// ==================== ÜRÜN REÇETELERİ (BOM) ====================
+
+model BillOfMaterial {
+  id        String    @id @default(cuid())
+  bomNo     String    @unique
+  productId String
+  product   Product   @relation(fields: [productId], references: [id])
+  version   String    @default("1.0")
+  status    String    @default("TASLAK") // TASLAK, AKTIF, PASIF
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  items            BomItem[]
+  productionOrders ProductionOrder[]
+}
+
+model BomItem {
+  id            String          @id @default(cuid())
+  bomId         String
+  bom           BillOfMaterial  @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  materialId    String
+  material      Product         @relation("BomMaterial", fields: [materialId], references: [id])
+  quantity      Float
+  unit          String          @default("ADET")
+  wastageRate   Float           @default(0) // Fire oranı %
+  notes         String?
+}
+
+// ==================== ÜRETİM ====================
+
+model ProductionOrder {
+  id           String          @id @default(cuid())
+  orderNo      String          @unique
+  bomId        String
+  bom          BillOfMaterial  @relation(fields: [bomId], references: [id])
+  quantity     Float
+  plannedStart DateTime
+  plannedEnd   DateTime
+  actualStart  DateTime?
+  actualEnd    DateTime?
+  status       String          @default("PLANLI") // PLANLI, DEVAM, DURAKLATILDI, TAMAMLANDI, IPTAL
+  priority     String          @default("NORMAL") // DUSUK, NORMAL, YUKSEK, ACIL
+  notes        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  lines              ProductionOrderLine[]
+  qualityInspections QualityInspection[]
+}
+
+model ProductionOrderLine {
+  id                String          @id @default(cuid())
+  productionOrderId String
+  productionOrder   ProductionOrder @relation(fields: [productionOrderId], references: [id], onDelete: Cascade)
+  materialId        String
+  material          Product         @relation("ProductionMaterial", fields: [materialId], references: [id])
+  requiredQty       Float
+  usedQty           Float           @default(0)
+}
+
+// ==================== KALİTE YÖNETİMİ (QM) ====================
+
+model QualityInspection {
+  id                String           @id @default(cuid())
+  inspectionNo      String           @unique
+  productionOrderId String?
+  productionOrder   ProductionOrder? @relation(fields: [productionOrderId], references: [id])
+  productId         String
+  product           Product          @relation(fields: [productId], references: [id])
+  inspectorName     String
+  date              DateTime
+  result            String           @default("BEKLEMEDE") // BEKLEMEDE, GECTI, KALDI, KOSULLU
+  sampleSize        Int              @default(1)
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  items QualityInspectionItem[]
+}
+
+model QualityInspectionItem {
+  id           String             @id @default(cuid())
+  inspectionId String
+  inspection   QualityInspection  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  parameter    String             // Ölçüm parametresi (ör: Ağırlık, Boyut, Renk)
+  standard     String             // Beklenen standart
+  actual       String             // Gerçekleşen
+  result       String             @default("BEKLEMEDE") // GECTI, KALDI, BEKLEMEDE
+  notes        String?
+}
+
+// ==================== BAKIM & ONARIM (PM) ====================
+
+model MaintenanceEquipment {
+  id           String   @id @default(cuid())
+  equipmentNo  String   @unique
+  name         String
+  location     String?
+  manufacturer String?
+  model        String?
+  serialNo     String?
+  installDate  DateTime?
+  status       String   @default("AKTIF") // AKTIF, BAKIM, ARIZA, DEVRE_DISI
+  notes        String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  maintenanceOrders MaintenanceOrder[]
+}
+
+model MaintenanceOrder {
+  id          String                @id @default(cuid())
+  orderNo     String                @unique
+  equipmentId String
+  equipment   MaintenanceEquipment  @relation(fields: [equipmentId], references: [id])
+  type        String                // PERIYODIK, ARIZA, ONLEYICI
+  priority    String                @default("NORMAL") // DUSUK, NORMAL, YUKSEK, ACIL
+  description String
+  assignedTo  String?
+  plannedDate DateTime
+  completedDate DateTime?
+  cost        Float                 @default(0)
+  status      String                @default("PLANLI") // PLANLI, DEVAM, TAMAMLANDI, IPTAL
+  notes       String?
+  createdAt   DateTime              @default(now())
+  updatedAt   DateTime              @updatedAt
+}
+
+// ==================== AYARLAR ====================
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  group     String   @default("GENEL") // GENEL, FIRMA, FATURA, STOK, URETIM
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

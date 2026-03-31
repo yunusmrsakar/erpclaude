@@ -1,11 +1,8 @@
-import { PrismaClient } from "../src/generated/prisma/index.js";
-import { PrismaLibSql } from "@prisma/adapter-libsql";
-import path from "path";
-import { fileURLToPath } from "url";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import "dotenv/config";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const dbPath = path.resolve(__dirname, "dev.db");
-const adapter = new PrismaLibSql({ url: `file:${dbPath}` });
+const adapter = new PrismaPg(process.env.DATABASE_URL);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
@@ -203,6 +200,114 @@ async function main() {
     data: { title: "Star Lojistik - Depo Otomasyon Projesi", value: 180000, stage: "ADAY", probability: 20 },
   });
   console.log("✓ CRM verileri oluşturuldu");
+
+  // BOM (Ürün Reçeteleri)
+  const bom1 = await prisma.billOfMaterial.create({
+    data: {
+      bomNo: "BOM-001", productId: products["PRD001"], version: "1.0", status: "AKTIF",
+      items: { create: [
+        { materialId: products["PRD003"], quantity: 1, unit: "ADET", wastageRate: 2 },
+        { materialId: products["PRD004"], quantity: 1, unit: "ADET", wastageRate: 1 },
+        { materialId: products["PRD008"], quantity: 0.5, unit: "MT", wastageRate: 5 },
+      ]},
+    },
+  });
+  const bom2 = await prisma.billOfMaterial.create({
+    data: {
+      bomNo: "BOM-002", productId: products["PRD002"], version: "1.0", status: "AKTIF",
+      items: { create: [
+        { materialId: products["PRD007"], quantity: 2, unit: "MT", wastageRate: 3 },
+        { materialId: products["PRD008"], quantity: 1, unit: "MT", wastageRate: 2 },
+      ]},
+    },
+  });
+  console.log("✓ Ürün reçeteleri oluşturuldu");
+
+  // Üretim Emirleri
+  await prisma.productionOrder.create({
+    data: {
+      orderNo: "UE-2025-001", bomId: bom1.id, quantity: 10,
+      plannedStart: new Date("2025-01-10"), plannedEnd: new Date("2025-01-20"),
+      status: "DEVAM", priority: "YUKSEK",
+      lines: { create: [
+        { materialId: products["PRD003"], requiredQty: 10, usedQty: 7 },
+        { materialId: products["PRD004"], requiredQty: 10, usedQty: 6 },
+      ]},
+    },
+  });
+  await prisma.productionOrder.create({
+    data: {
+      orderNo: "UE-2025-002", bomId: bom2.id, quantity: 5,
+      plannedStart: new Date("2025-02-01"), plannedEnd: new Date("2025-02-10"),
+      status: "PLANLI", priority: "NORMAL",
+    },
+  });
+  console.log("✓ Üretim emirleri oluşturuldu");
+
+  // Kalite Kontrolleri
+  await prisma.qualityInspection.create({
+    data: {
+      inspectionNo: "KK-2025-001", productId: products["PRD001"],
+      inspectorName: "Mustafa Şahin", date: new Date("2025-01-18"),
+      result: "GECTI", sampleSize: 3,
+      items: { create: [
+        { parameter: "Ağırlık", standard: "1.8-2.2 kg", actual: "2.0 kg", result: "GECTI" },
+        { parameter: "Ekran Çözünürlüğü", standard: "1920x1080", actual: "1920x1080", result: "GECTI" },
+        { parameter: "Pil Ömrü", standard: "Min 6 saat", actual: "7.5 saat", result: "GECTI" },
+      ]},
+    },
+  });
+  await prisma.qualityInspection.create({
+    data: {
+      inspectionNo: "KK-2025-002", productId: products["PRD007"],
+      inspectorName: "Ali Öztürk", date: new Date("2025-01-25"),
+      result: "KOSULLU", sampleSize: 5,
+      items: { create: [
+        { parameter: "Kalınlık", standard: "2.0 mm ± 0.1", actual: "2.15 mm", result: "KALDI" },
+        { parameter: "Yüzey Kalitesi", standard: "Ra 1.6", actual: "Ra 1.4", result: "GECTI" },
+      ]},
+    },
+  });
+  console.log("✓ Kalite kontrolleri oluşturuldu");
+
+  // Ekipmanlar
+  const ekip1 = await prisma.maintenanceEquipment.create({
+    data: { equipmentNo: "EKP-001", name: "CNC Torna Tezgahı", location: "Üretim Hattı A", manufacturer: "Mazak", model: "QTN-200", serialNo: "SN-2021-4455", installDate: new Date("2021-06-15"), status: "AKTIF" },
+  });
+  const ekip2 = await prisma.maintenanceEquipment.create({
+    data: { equipmentNo: "EKP-002", name: "Hidrolik Pres", location: "Üretim Hattı B", manufacturer: "Ermaksan", model: "HP-300", serialNo: "SN-2020-3322", installDate: new Date("2020-03-10"), status: "AKTIF" },
+  });
+  await prisma.maintenanceEquipment.create({
+    data: { equipmentNo: "EKP-003", name: "Forklift", location: "Ana Depo", manufacturer: "Toyota", model: "8FGCU25", serialNo: "SN-2022-7788", installDate: new Date("2022-09-01"), status: "BAKIM" },
+  });
+  console.log("✓ Ekipmanlar oluşturuldu");
+
+  // Bakım Emirleri
+  await prisma.maintenanceOrder.create({
+    data: { orderNo: "BE-2025-001", equipmentId: ekip1.id, type: "PERIYODIK", priority: "NORMAL", description: "6 aylık periyodik bakım - yağ değişimi ve kalibrasyon", assignedTo: "Mustafa Şahin", plannedDate: new Date("2025-01-15"), status: "TAMAMLANDI", completedDate: new Date("2025-01-15"), cost: 5000 },
+  });
+  await prisma.maintenanceOrder.create({
+    data: { orderNo: "BE-2025-002", equipmentId: ekip2.id, type: "ARIZA", priority: "ACIL", description: "Hidrolik silindir sızıntısı - acil onarım gerekli", assignedTo: "Ali Öztürk", plannedDate: new Date("2025-02-01"), status: "DEVAM", cost: 12000 },
+  });
+  console.log("✓ Bakım emirleri oluşturuldu");
+
+  // Ayarlar
+  const ayarlar = [
+    { key: "firma_adi", value: "Demo ERP A.Ş.", group: "FIRMA" },
+    { key: "firma_vergi_no", value: "1234567890", group: "FIRMA" },
+    { key: "firma_vergi_dairesi", value: "Kadıköy", group: "FIRMA" },
+    { key: "firma_adres", value: "İstanbul, Türkiye", group: "FIRMA" },
+    { key: "varsayilan_kdv", value: "20", group: "FATURA" },
+    { key: "fatura_serisi", value: "FTR", group: "FATURA" },
+    { key: "para_birimi", value: "TRY", group: "GENEL" },
+    { key: "dil", value: "tr", group: "GENEL" },
+    { key: "kritik_stok_seviyesi", value: "10", group: "STOK" },
+    { key: "varsayilan_depo", value: "Ana Depo", group: "STOK" },
+  ];
+  for (const a of ayarlar) {
+    await prisma.setting.create({ data: a });
+  }
+  console.log("✓ Ayarlar oluşturuldu");
 
   console.log("\n✅ Tüm seed verileri başarıyla oluşturuldu!");
 }

@@ -29,6 +29,15 @@ const BREADCRUMB_MAP: Record<string, string> = {
   firsatlar: "Fırsatlar",
   aktiviteler: "Aktiviteler",
   raporlar: "Raporlar",
+  uretim: "Üretim",
+  receteler: "Ürün Reçeteleri",
+  emirler: "Emirler",
+  kalite: "Kalite Yönetimi",
+  kontroller: "Kalite Kontrolleri",
+  bakim: "Bakım & Onarım",
+  ekipmanlar: "Ekipmanlar",
+  ayarlar: "Ayarlar",
+  yeni: "Yeni",
 };
 
 export default function Topbar() {
@@ -57,7 +66,8 @@ export default function Topbar() {
 
       {/* Actions */}
       <div className="flex items-center gap-3">
-        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+        <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          onClick={() => window.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}>
           <Search size={18} className="text-fiori-neutral" />
         </button>
         <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors relative">

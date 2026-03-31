@@ -1,5 +1,6 @@
 import Sidebar from "@/components/layout/Sidebar";
 import Topbar from "@/components/layout/Topbar";
+import GlobalSearch from "@/components/shared/GlobalSearch";
 
 export default function DashboardLayout({
   children,
@@ -13,6 +14,7 @@ export default function DashboardLayout({
         <Topbar />
         <main className="p-6">{children}</main>
       </div>
+      <GlobalSearch />
     </div>
   );
 }
